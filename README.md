@@ -5,3 +5,4 @@
 * Push changes: `git push --set-upstream origin <BRANCH_NAME>`
 * Click on "**Contribute button**" project and create a `pull request`.
 * Then `Compare and Merge`
+* To pull changes: `git pull`
