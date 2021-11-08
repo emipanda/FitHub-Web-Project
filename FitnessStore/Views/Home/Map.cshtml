@@ -1,0 +1,66 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+
+
+*@
+
+
+@{
+
+    ViewData["Title"] = "Map";
+
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>loadmapasyncHTML</title>
+    <style type='text/css'>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI',Helvetica,Arial,Sans-Serif
+        }
+    </style>
+    <meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
+    <script type='text/javascript' src='https://www.bing.com/api/maps/mapcontrol?key=AnrMDjYIPnhJSCdPAbLNNzVkIraNyN0aJNI7mHoOvr8NNO4aNwYcEF1KxKWoZovZ'></script>
+    <script type='text/javascript'>
+        var map;
+        function loadMapScenario() {
+            map = new Microsoft.Maps.Map(document.getElementById('myMap'), {});
+
+            var yourobject; // This is JavaScript
+            // 32.09653590972698, 34.77302871775628       32.027993, 34.758987
+            //<% for (var i = 0; i < Model.Inserts.Count(); i++) { %> // This is .NET
+            //    yourobject = '<%= Model.Inserts[i] %>'; // This is JS AND .NET
+            //    var loc = new Microsoft.Maps.Location(yourobject.x, yourobject.y);
+            //    //Add a pushpin at the user's location.
+            //    var pin = new Microsoft.Maps.Pushpin(loc, { text: "Tel Aviv Port Fitness Hub" });
+            //    map.entities.push(pin);
+            //<% } %>
+
+            var loc = new Microsoft.Maps.Location(32.09653590972698, 34.77302871775628);
+            var loc2 = new Microsoft.Maps.Location(32.027993, 34.758987);
+
+            //Add a pushpin at the user's location.
+            var pin = new Microsoft.Maps.Pushpin(loc, { text: "Tel Aviv Port Fitness Hub" });
+            var pin2 = new Microsoft.Maps.Pushpin(loc2, { text: "Fitness Hub" });
+
+            map.entities.push(pin);
+            map.entities.push(pin2);
+
+            //Center the map on the user's location.
+            map.setView({ center: loc, zoom: 15 });
+
+        }
+
+
+    </script>
+</head>
+<body onload='loadMapScenario();'>
+    <div id='printoutPanel'></div>
+
+    <div id='myMap' style='width: 100vw; height: 100vh;'></div>
+</body>
+</html>

@@ -22,6 +22,15 @@ namespace FitnessStore.Controllers
         // GET: Suppliers
         public async Task<IActionResult> Index()
         {
+            // add product count to the supplier view (see how many products each supplier has)
+            var result = from supplier in _context.Supplier
+            let productCount =
+            (
+              from product in _context.Product
+              where product.ProductSuppliersId == supplier.Id
+              select product
+            ).Count()
+            select new { Supplier = supplier, Count = productCount };
             return View(await _context.Supplier.ToListAsync());
         }
 

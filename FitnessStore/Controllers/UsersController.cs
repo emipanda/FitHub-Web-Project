@@ -7,34 +7,35 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using FitnessStore.Data;
 using FitnessStore.Models;
+using FitnessStore.BL;
 
 namespace FitnessStore.Controllers
 {
     public class UsersController : Controller
     {
-        private readonly FitnessStoreContext _context;
+
+        private readonly UserBL _userBl;
 
         public UsersController(FitnessStoreContext context)
         {
-            _context = context;
+            this._userBl = new UserBL(context);
         }
 
         // GET: Users
         public async Task<IActionResult> Index()
         {
-            return View(await _context.User.ToListAsync());
+            return View(this._userBl.GetUsers());
         }
 
         // GET: Users/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var user = await _context.User
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var user = await this._userBl.GetUser(id);
             if (user == null)
             {
                 return NotFound();
@@ -58,22 +59,21 @@ namespace FitnessStore.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(user);
-                await _context.SaveChangesAsync();
+                await this._userBl.Create(user);
                 return RedirectToAction(nameof(Index));
             }
             return View(user);
         }
 
         // GET: Users/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+        public async Task<IActionResult> Edit(int id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var user = await _context.User.FindAsync(id);
+            var user = await this._userBl.GetUser(id);
             if (user == null)
             {
                 return NotFound();
@@ -97,12 +97,11 @@ namespace FitnessStore.Controllers
             {
                 try
                 {
-                    _context.Update(user);
-                    await _context.SaveChangesAsync();
+                    await this._userBl.Edit(user);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!UserExists(user.Id))
+                    if (! await UserExists(user.Id))
                     {
                         return NotFound();
                     }
@@ -117,15 +116,14 @@ namespace FitnessStore.Controllers
         }
 
         // GET: Users/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(int id)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var user = await _context.User
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var user = await this._userBl.Delete(id);
             if (user == null)
             {
                 return NotFound();
@@ -139,15 +137,13 @@ namespace FitnessStore.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var user = await _context.User.FindAsync(id);
-            _context.User.Remove(user);
-            await _context.SaveChangesAsync();
+            await this._userBl.Delete(id);
             return RedirectToAction(nameof(Index));
         }
 
-        private bool UserExists(int id)
+        private async Task<bool> UserExists(int id)
         {
-            return _context.User.Any(e => e.Id == id);
+            return await this._userBl.GetUser(id) != null;
         }
     }
 }

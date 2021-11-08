@@ -14,12 +14,30 @@ namespace FitnessStore.Data
         {
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<StoreLocation>().HasNoKey();
+            modelBuilder.Entity<Supplier>().HasKey(s => s.Id);
+
+            modelBuilder.Entity<Product>().HasOne<Supplier>(p => p.ProductSuppliers);
+
+            modelBuilder.Entity<ShoppingCart>().HasKey(s => s.ID);
+            modelBuilder.Entity<User>().HasOne<ShoppingCart>(u => u.UserCart).WithOne(c => c.User);
+        }
+
         public DbSet<FitnessStore.Models.Product> Product { get; set; }
 
         public DbSet<FitnessStore.Models.Supplier> Supplier { get; set; }
 
+        public DbSet<FitnessStore.Models.StoreLocation> StoreLocation{ get; set; }
+
+
         public DbSet<FitnessStore.Models.ShoppingCart> ShoppingCart { get; set; }
 
         public DbSet<FitnessStore.Models.User> User { get; set; }
+
     }
+
+    //FitnessStoreContext context;
+
 }

@@ -1,4 +1,5 @@
-﻿using FitnessStore.Models;
+﻿using FitnessStore.Data;
+using FitnessStore.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -12,10 +13,14 @@ namespace FitnessStore.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly FitnessStoreContext _context;
 
-        public HomeController(ILogger<HomeController> logger)
+
+        public HomeController(ILogger<HomeController> logger, FitnessStoreContext context)
         {
             _logger = logger;
+            _context = context;
+
         }
 
         public IActionResult Index()
@@ -26,6 +31,13 @@ namespace FitnessStore.Controllers
         public IActionResult Privacy()
         {
             return View();
+        }
+
+
+        public IActionResult Map()
+        {
+            return View();
+            // return View(this._context.StoreLocation.ToList());
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

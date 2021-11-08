@@ -36,7 +36,11 @@ namespace FitnessStore.Models
         [DisplayName("Image")]
         public string ImageURL { get; set; }
 
-        public ICollection<Supplier> ProductSuppliers{ get; set; }
+
+        public virtual Supplier ProductSuppliers { get; set; }
+
+        [ForeignKey("ProductSuppliers")]
+        public int ProductSuppliersId { get; set; }
 
 
     }

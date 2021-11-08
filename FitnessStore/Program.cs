@@ -1,5 +1,7 @@
+using FitnessStore.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
@@ -13,7 +15,33 @@ namespace FitnessStore
     {
         public static void Main(string[] args)
         {
-            CreateHostBuilder(args).Build().Run();
+            var host = CreateHostBuilder(args).Build();
+            CreateDbIfNotExists(host);//we create db before running the website
+            host.Run();
+           // CreateHostBuilder(args).Build().Run();
+        }
+
+        private static void CreateDbIfNotExists(IHost host)//automatically created with show potential fixes
+        {
+            using (var scope = host.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+
+                try
+                {
+                    var context = services.GetRequiredService<FitnessStoreContext>();
+                    DBinitializer.DBInitialize(context);
+                    //initialzing the data base intiazliing function
+                }
+                catch (Exception ex)
+                {
+                    var logger = services.GetRequiredService<ILogger<Program>>();
+                    //gets access to the log system
+                    logger.LogError(ex, "Erorr with initialzing DB");
+                }
+                
+            }
+            //throw new NotImplementedException();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
