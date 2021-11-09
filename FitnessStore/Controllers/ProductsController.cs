@@ -22,8 +22,25 @@ namespace FitnessStore.Controllers
         // GET: Products
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Product.ToListAsync());
+            var results =
+                 from p in this._context.Product
+                 join s in this._context.Supplier on p.ProductSuppliersId equals s.Id
+                 select new { Product = p, SupplierName = s.SupplierName };
+
+            return View(results);
         }
+
+        public async Task<IActionResult> Filter(ProductType? productType, int? price, Supplier? supplier)
+        {
+            List<Product> results = this._context.Product.Where(product =>
+            (productType == null || product.ThisProductType == productType) &&
+            (price == null || product.price == price) &&
+            (supplier == null || product.ProductSuppliersId == supplier.Id)).ToList();
+
+            return View(results);
+
+        }
+        
 
         // GET: Products/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -34,6 +51,9 @@ namespace FitnessStore.Controllers
             }
 
             var product = await _context.Product
+                .Include(s => s.ProductSuppliers)//adding the products name to the details display
+                .ThenInclude(su => su.SupplierName)//by name
+                .AsNoTracking()//to improve performance and make things faster
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (product == null)
             {

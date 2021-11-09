@@ -45,7 +45,7 @@ namespace FitnessStore.Models
         [DisplayName("Email address")]
         public string Email { get; set; }
 
-      
+
         [JsonIgnore]
         [Required]
         [DataType(DataType.Password)] // SHA-256 encrypted
@@ -55,7 +55,10 @@ namespace FitnessStore.Models
         [DisplayName("Manager ?")]
         public bool IsManager { get; set; }
 
-        public ShoppingCart UserCart{ get; set; }
+        public virtual ShoppingCart UserCart { get; set; }
+
+        [ForeignKey("UserCart")]
+        public int UserCartId { get; set; }
     }
 }
 

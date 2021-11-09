@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using FitnessStore.Data;
 
+
 namespace FitnessStore
 {
     public class Startup
@@ -55,8 +56,9 @@ namespace FitnessStore
             {
                 endpoints.MapControllerRoute(
                     name: "default",
-                    pattern: "{controller=Home}/{action=Index}/{id?}");
+                    pattern: "{controller=Suppliers}/{action=Index}/{id?}");
             });
+           
         }
     }
 }

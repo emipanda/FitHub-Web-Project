@@ -87,6 +87,14 @@ namespace FitnessStore.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "StoreLocation",
+                columns: table => new
+                {
+                    x = table.Column<string>(type: "int", nullable: false),
+                    y = table.Column<int>(type: "int", nullable: false)
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_Product_ShoppingCartID",
                 table: "Product",

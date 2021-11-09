@@ -35,7 +35,10 @@ namespace FitnessStore.Controllers
             }
 
             var shoppingCart = await _context.ShoppingCart
+                .Include(p => p.Products) //adding the list of products
+                .ThenInclude(pn => pn.ProductName) // by name
                 .Include(s => s.User)
+                .AsNoTracking()//to improve performance and make things faster
                 .FirstOrDefaultAsync(m => m.ID == id);
             if (shoppingCart == null)
             {
