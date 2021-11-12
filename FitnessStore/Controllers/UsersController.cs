@@ -3,147 +3,107 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using FitnessStore.ViewModels;
 using FitnessStore.Data;
-using FitnessStore.Models;
-using FitnessStore.BL;
 
 namespace FitnessStore.Controllers
 {
-    public class UsersController : Controller
+    [AllowAnonymous]
+    public class AccountController : Controller
     {
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
 
-        private readonly UserBL _userBl;
-
-        public UsersController(FitnessStoreContext context)
+        public AccountController(UserManager<ApplicationUser> userManager,
+                                 SignInManager<ApplicationUser> signInManager)
         {
-            this._userBl = new UserBL(context);
+            _userManager = userManager;
+            _signInManager = signInManager;
         }
 
-        // GET: Users
-        public async Task<IActionResult> Index()
+        [AllowAnonymous]
+        public IActionResult Register()
         {
-            return View(this._userBl.GetUsers());
-        }
-
-        // GET: Users/Details/5
-        public async Task<IActionResult> Details(int id)
-        {
-            if (id == null)
+            return View(new RegisterViewModel
             {
-                return NotFound();
+                Errors = new List<string>()
+            });
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var user = new ApplicationUser { UserName = model.Email, Email = model.Email };
+                var result = await _userManager.CreateAsync(user, model.Password);
+
+                if (result.Succeeded)
+                {
+                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    return RedirectToAction("Index", "Home");
+                }
+                else
+                {
+                    model.Errors = result.Errors.Select(x => x.Description).ToList();
+                }
+            }
+            return View(model);
+        }
+
+        [AllowAnonymous]
+        public IActionResult Login(string returnUrl)
+        {
+            return View(new LoginViewModel
+            {
+                ReturnUrl = returnUrl
+            });
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = await _userManager.FindByNameAsync(model.UserName);
+
+            if (user != null)
+            {
+                var result = await _signInManager.PasswordSignInAsync(user, model.Password, false, false);
+
+                if (result.Succeeded)
+                {
+                    if (string.IsNullOrEmpty(model.ReturnUrl))
+                        return RedirectToAction("Index", "Home");
+
+                    return Redirect(model.ReturnUrl);
+                }
             }
 
-            var user = await this._userBl.GetUser(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            return View(user);
+            ModelState.AddModelError("", "Username or Password was invalid.");
+            return View(model);
         }
 
-        // GET: Users/Create
-        public IActionResult Create()
+        [Authorize]
+        public async Task<IActionResult> LogOut()
+        {
+            await _signInManager.SignOutAsync();
+            return RedirectToAction("Index", "Home");
+        }
+
+        [AllowAnonymous]
+        public IActionResult AccessDenied()
         {
             return View();
         }
 
-        // POST: Users/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,UserName,FirstName,LastName,Email,Password,IsManager")] User user)
-        {
-            if (ModelState.IsValid)
-            {
-                await this._userBl.Create(user);
-                return RedirectToAction(nameof(Index));
-            }
-            return View(user);
-        }
-
-        // GET: Users/Edit/5
-        public async Task<IActionResult> Edit(int id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var user = await this._userBl.GetUser(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-            return View(user);
-        }
-
-        // POST: Users/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,UserName,FirstName,LastName,Email,Password,IsManager")] User user)
-        {
-            if (id != user.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    await this._userBl.Edit(user);
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (! await UserExists(user.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(user);
-        }
-
-        // GET: Users/Delete/5
-        public async Task<IActionResult> Delete(int id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var user = await this._userBl.Delete(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            return View(user);
-        }
-
-        // POST: Users/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            await this._userBl.Delete(id);
-            return RedirectToAction(nameof(Index));
-        }
-
-        private async Task<bool> UserExists(int id)
-        {
-            return await this._userBl.GetUser(id) != null;
-        }
     }
 }

@@ -26,7 +26,7 @@ namespace FitnessStore.Controllers
             var result = from supplier in _context.Supplier
             let productCount =
             (
-              from product in _context.Product
+              from product in _context.Products
               where product.ProductSuppliersId == supplier.Id
               select product
             ).Count()

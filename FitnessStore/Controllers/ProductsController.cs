@@ -23,18 +23,22 @@ namespace FitnessStore.Controllers
         public async Task<IActionResult> Index()
         {
             var results =
-                 from p in this._context.Product
+                 from p in this._context.Products
                  join s in this._context.Supplier on p.ProductSuppliersId equals s.Id
                  select new { Product = p, SupplierName = s.SupplierName };
-
-            return View(results);
+            List<Product> resultList = new List<Product>();
+            foreach(var result in results)
+            {
+                resultList.Add(result.Product);
+            }
+            return View(resultList);
         }
 
         public async Task<IActionResult> Filter(ProductType? productType, int? price, Supplier? supplier)
         {
-            List<Product> results = this._context.Product.Where(product =>
+            List<Product> results = this._context.Products.Where(product =>
             (productType == null || product.ThisProductType == productType) &&
-            (price == null || product.price == price) &&
+            (price == null || product.Price == price) &&
             (supplier == null || product.ProductSuppliersId == supplier.Id)).ToList();
 
             return View(results);
@@ -50,7 +54,7 @@ namespace FitnessStore.Controllers
                 return NotFound();
             }
 
-            var product = await _context.Product
+            var product = await _context.Products
                 .Include(s => s.ProductSuppliers)//adding the products name to the details display
                 .ThenInclude(su => su.SupplierName)//by name
                 .AsNoTracking()//to improve performance and make things faster
@@ -93,7 +97,7 @@ namespace FitnessStore.Controllers
                 return NotFound();
             }
 
-            var product = await _context.Product.FindAsync(id);
+            var product = await _context.Products.FindAsync(id);
             if (product == null)
             {
                 return NotFound();
@@ -144,7 +148,7 @@ namespace FitnessStore.Controllers
                 return NotFound();
             }
 
-            var product = await _context.Product
+            var product = await _context.Products
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (product == null)
             {
@@ -159,15 +163,15 @@ namespace FitnessStore.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var product = await _context.Product.FindAsync(id);
-            _context.Product.Remove(product);
+            var product = await _context.Products.FindAsync(id);
+            _context.Products.Remove(product);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool ProductExists(int id)
         {
-            return _context.Product.Any(e => e.Id == id);
+            return _context.Products.Any(e => e.Id == id);
         }
     }
 }
