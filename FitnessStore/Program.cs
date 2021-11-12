@@ -30,7 +30,7 @@ namespace FitnessStore
                 try
                 {
                     var context = services.GetRequiredService<FitnessStoreContext>();
-                    DBinitializer.DBInitialize(context);
+                    DbInitializer.Initialize(context,services);
                     //initialzing the data base intiazliing function
                 }
                 catch (Exception ex)

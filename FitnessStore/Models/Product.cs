@@ -24,7 +24,7 @@ namespace FitnessStore.Models
 
         [Required]
         [Range(0, 1000, ErrorMessage = "The price must be between 0 and 1000")]
-        public int price { get; set; }
+        public decimal Price { get; set; }
 
         [Required]
         [Range(0, 100, ErrorMessage = "The number in stock must be between 0 and 100")]
@@ -34,11 +34,14 @@ namespace FitnessStore.Models
         //[IsUpdatable]
         [DataType(DataType.Url)]
         [DisplayName("Image")]
-        public string ImageURL { get; set; }
-
+        public string ImageUrl { get; set; }
 
         public virtual Supplier ProductSuppliers { get; set; }
 
+        [StringLength(255, MinimumLength = 2)]
+        [DataType(DataType.MultilineText)]
+        [Required]
+        public string Description { get; set; }
         [ForeignKey("ProductSuppliers")]
         public int ProductSuppliersId { get; set; }
 

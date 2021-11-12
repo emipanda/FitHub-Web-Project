@@ -1,142 +1,175 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using FitnessStore.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FitnessStore.Data
 {
-    public static class DBinitializer // make it static to only create it once and not every run
+    public class DbInitializer
     {
-        public static void DBInitialize(FitnessStoreContext context)
+        public static void Initialize(FitnessStoreContext context, IServiceProvider service)
         {
-            context.Database.EnsureCreated();//checks if DB exsits. if not, will build it
+            context.Database.EnsureCreated();
 
-            if (context.Supplier.Any() || context.Product.Any())
+            var roleManager = service.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = service.GetRequiredService<UserManager<ApplicationUser>>();
+
+            if (context.Products.Any())
             {
                 return;
             }
-                //checking if theres data in the models
-               
-            var suppliers = new Supplier[]
-            {
-            new Supplier{Id =1, SupplierName = "Nike"},
-            new Supplier {Id = 2, SupplierName = "Adidas" },//both are for clothing
-            new Supplier {Id =3, SupplierName = "All In" },// for suppliments
-            new Supplier {Id = 4, SupplierName = "California Gold" },//for suppliments
-            new Supplier {Id =5, SupplierName = "CrossFit Plus" },
-            new Supplier {Id =6, SupplierName = "Crossfit Champ" }//for gear
-            };
 
-            foreach (Supplier s in suppliers)
-            {
+            ClearDatabase(context);
+            CreateAdminRole(context, roleManager, userManager);
+            SeedDatabase(context, roleManager, userManager);
+        }
 
-                context.Supplier.Add(s); //adding them to the database
-            }
-            context.SaveChanges();//saving changes
-
-            var storeLocations = new StoreLocation[]
-            {
-                new StoreLocation{x=1, y=1},
-                new StoreLocation{x=1, y=1},
-
-            };
-            context.StoreLocation.AddRange(storeLocations);
-            context.SaveChanges();
-                      
-
-            var products = new Product[]
-            {
-                new Product { ProductName = "Womens Tights", ThisProductType = ProductType.Clothing, price = 150, NumberInStock = 10, ProductSuppliers = suppliers[1], ImageURL = "https://static.nike.com/a/images/t_PDP_864_v1/f_auto,b_rgb:f5f5f5/01b7720f-4c98-45d6-a450-00ca1f9bfa93/pro-365-mid-rise-crop-leggings-D31Dcj.png" },
-                new Product { ProductName = "Womens  short Tights", ThisProductType = ProductType.Clothing, price = 120, NumberInStock = 7, ProductSuppliers = suppliers[1], ImageURL = "https://static.nike.com/a/images/t_PDP_864_v1/f_auto,b_rgb:f5f5f5/84ca79d2-c6df-47ec-8291-61b89402d2cb/yoga-luxe-shorts-4HTfVB.png" },
-                new Product { ProductName = "Mens shorts", ThisProductType = ProductType.Clothing, price = 80, NumberInStock = 5, ProductSuppliers = suppliers[2], ImageURL = "https://s1.thcdn.com/productimg/1600/1600/12517895-9734789621222323.jpg" },
-                new Product { ProductName = "Mens Tank Top", ThisProductType = ProductType.Clothing, price = 70, NumberInStock = 8, ProductSuppliers = suppliers[2], ImageURL = "https://st-adidas-isr.mncdn.com/content/images/thumbs/0059481_runner-singlet_gn2164_standard-view.jpeg" },
-                new Product { ProductName = "Jump rope", ThisProductType = ProductType.Training_Gear, price = 40, NumberInStock = 10, ProductSuppliers = suppliers[5], ImageURL = "https://cdn.flashyapp.com/rrd3mn/25ehAyTz.jpeg" },
-                new Product { ProductName = "kettlebell", ThisProductType = ProductType.Training_Gear, price = 250, NumberInStock = 3, ProductSuppliers = suppliers[4], ImageURL = "https://d3m9l0v76dty0.cloudfront.net/system/photos/2660872/large/b8092f1639129f88c12c480817a90ecb.jpg" },
-                new Product { ProductName = "Barbell", ThisProductType = ProductType.Training_Gear, price = 280, NumberInStock = 11, ProductSuppliers = suppliers[4], ImageURL = "https://www.hamptonfit.com/wp-content/uploads/2014/04/UB-S-125.jpg" },
-                new Product { ProductName = "Pushup Handles", ThisProductType = ProductType.Training_Gear, price = 50, NumberInStock = 6, ProductSuppliers = suppliers[5], ImageURL = "https://superpharmstorage.blob.core.windows.net/hybris/products/desktop/medium/7299002678871.jpg" },
-                new Product { ProductName = "Whey protein powder", ThisProductType = ProductType.Supplement, price = 150, NumberInStock = 10, ProductSuppliers = suppliers[3], ImageURL = "https://superpharmstorage.blob.core.windows.net/hybris/products/desktop/medium/7290111601866.jpg" },
-                new Product { ProductName = "BCAA Tablets", ThisProductType = ProductType.Supplement, price = 110, NumberInStock = 12, ProductSuppliers = suppliers[3], ImageURL = "https://www.biogaya.co.il/media/catalog/product/cache/cd836a4499ae9487d98da081443bcceb/u/n/untitled-3-2.png" },
-                new Product { ProductName = "Vegan Protein Powder - Vanilla", ThisProductType = ProductType.Supplement, price = 180, NumberInStock = 3, ProductSuppliers = suppliers[4], ImageURL = "https://s3.images-iherb.com/cgn/cgn01350/w/10.jpg" },
-                new Product { ProductName = "Vegan Protein Powder - Chocolat", ThisProductType = ProductType.Supplement, price = 180, NumberInStock = 4, ProductSuppliers =  suppliers[4], ImageURL = "https://s3.images-iherb.com/cgn/cgn01348/w/3.jpg" },
-            };
-            foreach (Product p in products)
-            {
-
-                context.Product.Add(p); //adding them to the database
-            }
-            context.SaveChanges();//saving changes
-
-
-
-            if (context.User.Any())
+        private static void CreateAdminRole(FitnessStoreContext context, RoleManager<IdentityRole> _roleManager, UserManager<ApplicationUser> _userManager)
+        {
+            bool roleExists = _roleManager.RoleExistsAsync("Admin").Result;
+            if (roleExists)
             {
                 return;
             }
-            
 
-            var users = new User[]
+            var role = new IdentityRole()
             {
-                new User {Id =1 ,UserName = "DanTheBoss", Email ="ytal151@gmail.com", Password = "danspass123", FirstName ="Dan", LastName ="Cohen", IsManager = true},
-                new User {Id =2, UserName = "Emily123", Email ="emily@gmail.com", Password = "emilypass123", FirstName ="Emily", LastName ="Cohen", IsManager = false},
-                new User {Id = 3, UserName = "Adi123", Email ="Adi@gmail.com", Password = "adispass123", FirstName ="Adi", LastName ="Cohen", IsManager = false},
-                new User {Id = 4, UserName = "Gal123", Email ="Gal@gmail.com", Password = "galspass123", FirstName ="Gal", LastName ="Cohen", IsManager = false},
-                new User {Id = 5, UserName = "Ytal23", Email ="Ytal151@gmail.com", Password = "ytalspass123", FirstName ="Ytal", LastName ="Cohen", IsManager = false},
-
+                Name = "Admin"
             };
-            foreach (User u in users)
-            {
+            _roleManager.CreateAsync(role).Wait();
 
-                context.User.Add(u); //adding them to the database
-            }
-            context.SaveChanges();//saving changes
-            }
-            /*
-            if (!context.ShoppingCart.Any())
+            var user = new ApplicationUser()
             {
-                var productsForCartTwo = new Product[]
-                {
-                  new Product { ProductName = "Womens Tights", ThisProductType = ProductType.Clothing, price = 150, NumberInStock = 10, ProductSuppliers = "Nike", ImageURL = "https://static.nike.com/a/images/t_PDP_864_v1/f_auto,b_rgb:f5f5f5/01b7720f-4c98-45d6-a450-00ca1f9bfa93/pro-365-mid-rise-crop-leggings-D31Dcj.png" },
-                  new Product { ProductName = "Womens  short Tights", ThisProductType = ProductType.Clothing, price = 120, NumberInStock = 7, ProductSuppliers = "Nike", ImageURL = "https://static.nike.com/a/images/t_PDP_864_v1/f_auto,b_rgb:f5f5f5/84ca79d2-c6df-47ec-8291-61b89402d2cb/yoga-luxe-shorts-4HTfVB.png" },
-                  new Product { ProductName = "Vegan Protein Powder - Vanilla", ThisProductType = ProductType.Supplement, price = 180, NumberInStock = 3, ProductSuppliers = "California Gold", ImageURL = "https://s3.images-iherb.com/cgn/cgn01350/w/10.jpg" },
-
-                };
-                var productsForCartThree = new Product[]
-            {
-                 new Product { ProductName = "Mens Tank Top", ThisProductType = ProductType.Clothing, price = 70, NumberInStock = 8, ProductSuppliers = "Adidas", ImageURL = "https://st-adidas-isr.mncdn.com/content/images/thumbs/0059481_runner-singlet_gn2164_standard-view.jpeg" },
-                new Product { ProductName = "Jump rope", ThisProductType = ProductType.Training_Gear, price = 40, NumberInStock = 10, ProductSuppliers = "Crossfit Champ", ImageURL = "https://cdn.flashyapp.com/rrd3mn/25ehAyTz.jpeg" },
-                new Product { ProductName = "kettlebell", ThisProductType = ProductType.Training_Gear, price = 250, NumberInStock = 3, ProductSuppliers = "CrossFit Plus", ImageURL = "https://d3m9l0v76dty0.cloudfront.net/system/photos/2660872/large/b8092f1639129f88c12c480817a90ecb.jpg" },
-
+                UserName = "admin",
+                Email = "admin@default.com"
             };
-                var productsForCartFour = new Product[]
-{
-                new Product { ProductName = "Pushup Handles", ThisProductType = ProductType.Training_Gear, price = 50, NumberInStock = 6, ProductSuppliers = "Crossfit Champ", ImageURL = "https://superpharmstorage.blob.core.windows.net/hybris/products/desktop/medium/7299002678871.jpg" },
-                new Product { ProductName = "Whey protein powder", ThisProductType = ProductType.Supplement, price = 150, NumberInStock = 10, ProductSuppliers = "All In", ImageURL = "https://superpharmstorage.blob.core.windows.net/hybris/products/desktop/medium/7290111601866.jpg" },
-                new Product { ProductName = "BCAA Tablets", ThisProductType = ProductType.Supplement, price = 110, NumberInStock = 12, ProductSuppliers = "All In", ImageURL = "https://www.biogaya.co.il/media/catalog/product/cache/cd836a4499ae9487d98da081443bcceb/u/n/untitled-3-2.png" },
-};
 
-                var shoppingcarts = new ShoppingCart[]
+            string adminPassword = "Password123";
+            var userResult = _userManager.CreateAsync(user, adminPassword).Result;
+
+            if (userResult.Succeeded)
+            {
+                _userManager.AddToRoleAsync(user, "Admin").Wait();
+            }
+        }
+
+        private static void SeedDatabase(FitnessStoreContext _context, RoleManager<IdentityRole> _roleManager, UserManager<ApplicationUser> _userManager)
+        {
+           /* var cat1 = new Categories { Name = "Standard", Description = "The Bakery's Standard pizzas all year around." };
+            var cat2 = new Categories { Name = "Spcialities", Description = "The Bakery's Speciality pizzas only for a limited time." };
+            var cat3 = new Categories { Name = "News", Description = "The Bakery's New pizzas on the menu." };
+
+            var cats = new List<Categories>()
+            {
+                cat1, cat2, cat3
+            };*/
+
+            var prod1 = new Product { ProductName = "Capricciosa", Price = 70.00M, Description = "A normal pizza with a taste from the forest.", ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/2/2a/Pizza_capricciosa.jpg"};
+            var prod2 = new Product { ProductName = "Veggie", Price = 70.00M, Description = "Veggie Pizza for vegitarians", ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/3/3f/Vegetarian_pizza.jpg"};
+            var prod3 = new Product { ProductName = "Hawaii", Price = 75.00M, Description = "A nice tasting pizza from Hawaii.", ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/d/d1/Hawaiian_pizza_1.jpg"};
+            var prod4 = new Product { ProductName = "Margarita", Price = 65.00M, Description = "A basic pizza for everyone.", ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/a/a3/Eq_it-na_pizza-margherita_sep2005_sml.jpg" };
+            var prod5 = new Product { ProductName = "Kebab Special", Price = 85.00M, Description = "A special pizza with kebab for the hungry one.", ImageUrl = "http://2.bp.blogspot.com/_3cSn3Qz_4IA/THkYqKwGw1I/AAAAAAAAAPg/ybKpvRbjDWE/s1600/matsl%C3%A4kten+002.JPG"};
+            var prod6 = new Product { ProductName = "Pescatore", Price = 80.00M, Description = "A pizza with taste from the ocean.", ImageUrl = "https://isinginthekitchen.files.wordpress.com/2014/07/dsc_0231.jpg" };
+            var prod7 = new Product { ProductName = "Barcelona", Price = 70.00M, Description = "A pizza with taste from Spain, Barcelona", ImageUrl = "http://barcelona-home.com/blog/wp-content/upload/pizza/Pizzeria%20Los%20Amigos/pizza-jamon-dulce-y-champinone.jpg" };
+            var prod8 = new Product { ProductName = "Flying Jacob", Price = 89.00M, Description = "Flying pizza from the sky, with taste of banana.", ImageUrl = "https://upload.wikimedia.org/wikipedia/commons/6/64/Pizza_Hawaii_Special_p%C3%A5_Pizzeria_Papillon_i_Sala_1343.jpg" };
+            var prod9 = new Product { ProductName = "Kentucky", Price = 69.00M, Description = "A pizza from America with the taste of Kuntucky Chicken.", ImageUrl = "http://assets.kraftfoods.com/recipe_images/opendeploy/54150_640x428.jpg"};
+            var prod10 = new Product { ProductName = "La Carne", Price = 75.00M,Description = "Italian pizza with lot's of delicious meat.", ImageUrl = "https://www.davannis.com/wp-content/uploads/2015/03/five-meat.jpg"};
+
+            var prods = new List<Product>()
+            {
+                prod1, prod2, prod3, prod4, prod5, prod6, prod7, prod8, prod9, prod10
+            };
+
+            var user1 = new ApplicationUser { UserName = "user1@gmail.com", Email = "user1@gmail.com" };
+            var user2 = new ApplicationUser { UserName = "user2@gmail.com", Email = "user2@gmail.com" };
+            var user3 = new ApplicationUser { UserName = "user3@gmail.com", Email = "user3@gmail.com" };
+            var user4 = new ApplicationUser { UserName = "user4@gmail.com", Email = "user4@gmail.com" };
+            var user5 = new ApplicationUser { UserName = "user5@gmail.com", Email = "user5@gmail.com" };
+
+            string userPassword = "Password123";
+
+            var users = new List<ApplicationUser>()
+            {
+                user1, user2, user3, user4, user5
+            };
+
+            foreach (var user in users)
+            {
+                _userManager.CreateAsync(user, userPassword).Wait();
+            }
+
+
+
+            var ord1 = new Order
+            {
+                FirstName = "Pelle",
+                LastName = "Andersson",
+                AddressLine1 = "MainStreet 12",
+                City = "Gothenburg",
+                Country = "Sweden",
+                Email = "pelle22@gmail.com",
+                OrderPlaced = DateTime.Now.AddDays(-2),
+                PhoneNumber = "0705123456",
+                User = user1,
+                ZipCode = "43210",
+                OrderTotal = 370.00M,
+            };
+
+            var ord2 = new Order { };
+            var ord3 = new Order { };
+
+            var orderLines = new List<OrderDetail>()
+            {
+                new OrderDetail { Order=ord1, Product=prod1, Amount=2, Price=prod1.Price},
+                new OrderDetail { Order=ord1, Product=prod3, Amount=1, Price=prod3.Price},
+                new OrderDetail { Order=ord1, Product=prod5, Amount=3, Price=prod5.Price},
+            };
+
+            var orders = new List<Order>()
+            {
+                ord1
+            };
+
+            /*_context.Categories.AddRange(cats);*/
+            _context.Products.AddRange(prods);
+            _context.Orders.AddRange(orders);
+            _context.OrderDetails.AddRange(orderLines);
+
+            _context.SaveChanges();
+        }
+
+        private static void ClearDatabase(FitnessStoreContext _context)
+        {
+
+            var shoppingCartItems = _context.ShoppingCartItems.ToList();
+            _context.ShoppingCartItems.RemoveRange(shoppingCartItems);
+
+            var users = _context.Users.ToList();
+            var userRoles = _context.UserRoles.ToList();
+
+            foreach (var user in users)
+            {
+                if (!userRoles.Any(r => r.UserId == user.Id))
                 {
-
-                    new ShoppingCart {ID = 2, UserID =2, Products = productsForCartTwo },
-                    new ShoppingCart {ID = 3, UserID =3, Products = productsForCartThree },
-                    new ShoppingCart {ID = 4, UserID =4, Products = productsForCartFour },
-
-                };
-                foreach (ShoppingCart s in shoppingcarts)
-                {
-
-                    context.ShoppingCart.Add(s); //adding them to the database
+                    _context.Users.Remove(user);
                 }
-                context.SaveChanges();//saving changes
             }
-            */
+
+            var orderDetails = _context.OrderDetails.ToList();
+            _context.OrderDetails.RemoveRange(orderDetails);
+
+            var orders = _context.Orders.ToList();
+            _context.Orders.RemoveRange(orders);
+
+            var products = _context.Products.ToList();
+            _context.Products.RemoveRange(products);
+
+          /*  var categories = _context.Categories.ToList();
+            _context.Categories.RemoveRange(categories);*/
+
+            _context.SaveChanges();
         }
-
-        }
-    
-
-
-      
-    
+    }
+}

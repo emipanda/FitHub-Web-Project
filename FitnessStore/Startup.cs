@@ -10,7 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using FitnessStore.Data;
-
+using Microsoft.AspNetCore.Identity;
 
 namespace FitnessStore
 {
@@ -30,6 +30,9 @@ namespace FitnessStore
 
             services.AddDbContext<FitnessStoreContext>(options =>
                     options.UseSqlServer(Configuration.GetConnectionString("FitnessStoreContext")));
+            services.AddIdentity<ApplicationUser, IdentityRole>()
+                .AddEntityFrameworkStores<FitnessStoreContext>()
+                .AddDefaultTokenProviders();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
